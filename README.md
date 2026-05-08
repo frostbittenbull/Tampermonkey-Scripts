@@ -16,7 +16,7 @@
 
 | Скрипт | Описание | Установка |
 |--------|----------|-----------|
-| [Universal Video Resizer / Mover / Rotation](https://raw.githubusercontent.com/frostbittenbull/TamperMonkey-Scripts/main/Video-Tools/Universal-Video-Resizer-Mover-Rotation.user.js) | Изменение размера, перемещение и поворот видео на любом сайте | [Install ↗](https://raw.githubusercontent.com/frostbittenbull/TamperMonkey-Scripts/main/Video-Tools/Universal-Video-Resizer-Mover-Rotation.user.js) |
+| [Universal Video Resizer / Mover / Rotation](https://raw.githubusercontent.com/frostbittenbull/TamperMonkey-Scripts/main/Video-Tools/Universal-Video-Resizer-Mover-Rotation.user.js) | Изменение размера, прозрачности, перемещение и поворот видео на любом сайте | [Install ↗](https://raw.githubusercontent.com/frostbittenbull/TamperMonkey-Scripts/main/Video-Tools/Universal-Video-Resizer-Mover-Rotation.user.js) |
 
 ---
 
