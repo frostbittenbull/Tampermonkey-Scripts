@@ -1,11 +1,9 @@
 // ==UserScript==
-// @name         Universal Video Resizer & Mover & Rotation (Video-Only)
+// @name         Universal Video Resizer & Mover & Rotation (Video-Only) + PiP
 // @namespace    http://tampermonkey.net/
-// @version      19.4
-// @description  Zero Auto-Resize, Render Bug Fix, Persistent Handles + Rotate Video Picture Only. Pure Hover Logic. Corner Resize. Zero-lag overlay. True Video Bounds (No Stretch/Distortion). Prev/Next buttons.
-// @author       frostbittenbull
-// @updateURL    https://raw.githubusercontent.com/frostbittenbull/TamperMonkey-Scripts/main/Video-Tools/Universal-Video-Resizer-Mover-Rotation.user.js
-// @downloadURL  https://raw.githubusercontent.com/frostbittenbull/TamperMonkey-Scripts/main/Video-Tools/Universal-Video-Resizer-Mover-Rotation.user.js
+// @version      19.7
+// @description  Zero Auto-Resize, Render Bug Fix, Persistent Handles + Rotate Video Picture Only. Pure Hover Logic. Corner Resize. Zero-lag overlay. True Video Bounds. Prev/Next buttons + Picture-in-Picture.
+// @author       frostbittenbull (modified)
 // @match        *://*/*
 // @allFrames    true
 // @grant        none
@@ -45,7 +43,7 @@
     ['TL', 'TR', 'BL', 'BR'].forEach(corner => {
         const handle = document.createElement('div');
         handle.style.cssText = `
-            position: fixed; width: 30px; height: 30px;
+            position: fixed; width: 10px; height: 10px;
             cursor: ${cursors[corner]}; z-index: ${Z_HANDLES};
             pointer-events: auto; display: none; background: transparent;
         `;
@@ -189,7 +187,7 @@
     function updateHandlesPosition() {
         if (!activeVideo || !document.body.contains(activeVideo)) return;
         const bounds = getVideoBounds(activeVideo);
-        const size = 30;
+        const size = 10;
 
         setStyles(cornerHandles.TL, { left: `${bounds.left}px`, top: `${bounds.top}px` });
         setStyles(cornerHandles.TR, { left: `${bounds.right - size}px`, top: `${bounds.top}px` });
@@ -551,12 +549,43 @@
     const _ov = _el('div',`position:fixed;display:none;pointer-events:none;box-sizing:border-box;overflow:hidden;z-index:${Z_OVERLAY};`);
     document.documentElement.appendChild(_ov);
 
-    const _big = _el('div','position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.65);border:2px solid rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;box-sizing:border-box;transition:background .15s,transform .1s;');
+    // Центровая панель кнопок с Плей/Пауза и Перемотками
+    const _centerBox = _el('div', 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:30px;pointer-events:none;');
+    const _centerBtnCss = 'border-radius:50%;background:rgba(0,0,0,.65);border:2px solid rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;box-sizing:border-box;transition:background .15s,transform .1s;';
+
+    // -- Назад на 5 сек
+    const _bigRw = _el('div', `width:48px;height:48px;${_centerBtnCss}`);
+    const _bigRwSvg = _svg('M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z', 26, 26);
+    _bigRw.appendChild(_bigRwSvg.svg);
+    _bigRw.addEventListener('mouseenter',()=>{_bigRw.style.background='rgba(200,0,0,.85)';_bigRw.style.transform='scale(1.15)';});
+    _bigRw.addEventListener('mouseleave',()=>{_bigRw.style.background='rgba(0,0,0,.65)';_bigRw.style.transform='scale(1)';});
+    _bigRw.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if(activeVideo) activeVideo.currentTime = Math.max(0, activeVideo.currentTime - 5);
+    });
+
+    // -- Плей/Пауза
+    const _big = _el('div', `width:64px;height:64px;${_centerBtnCss}`);
     const _bigSvg = _svg('M8 5v14l11-7z', 28, 28);
     _big.appendChild(_bigSvg.svg);
-    _big.addEventListener('mouseenter',()=>{_big.style.background='rgba(200,0,0,.85)';_big.style.transform='translate(-50%,-50%) scale(1.08)';});
-    _big.addEventListener('mouseleave',()=>{_big.style.background='rgba(0,0,0,.65)';_big.style.transform='translate(-50%,-50%) scale(1)';});
-    _ov.appendChild(_big);
+    _big.addEventListener('mouseenter',()=>{_big.style.background='rgba(200,0,0,.85)';_big.style.transform='scale(1.1)';});
+    _big.addEventListener('mouseleave',()=>{_big.style.background='rgba(0,0,0,.65)';_big.style.transform='scale(1)';});
+
+    // -- Вперёд на 5 сек
+    const _bigFw = _el('div', `width:48px;height:48px;${_centerBtnCss}`);
+    const _bigFwSvg = _svg('M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z', 26, 26);
+    _bigFw.appendChild(_bigFwSvg.svg);
+    _bigFw.addEventListener('mouseenter',()=>{_bigFw.style.background='rgba(200,0,0,.85)';_bigFw.style.transform='scale(1.15)';});
+    _bigFw.addEventListener('mouseleave',()=>{_bigFw.style.background='rgba(0,0,0,.65)';_bigFw.style.transform='scale(1)';});
+    _bigFw.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if(activeVideo) activeVideo.currentTime = Math.min(activeVideo.duration || 9999, activeVideo.currentTime + 5);
+    });
+
+    _centerBox.appendChild(_bigRw);
+    _centerBox.appendChild(_big);
+    _centerBox.appendChild(_bigFw);
+    _ov.appendChild(_centerBox);
 
     const _bar = _el('div','position:absolute;bottom:0;left:0;right:0;padding:30px 12px 8px;background:linear-gradient(transparent,rgba(0,0,0,.85));display:flex;flex-direction:column;gap:7px;pointer-events:auto;box-sizing:border-box;');
 
@@ -587,6 +616,7 @@
     
     const PREV_D  = 'M6 6h2v12H6zm3.5 6l8.5 6V6z';
     const NEXT_D  = 'M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z';
+    const PIP_D   = 'M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z';
 
     const _prevbtn = _btn(PREV_D);
     const _pbtn = _btn(PLAY_D);
@@ -602,6 +632,7 @@
 
     const _sp = _el('div','flex:1;');
 
+    const _pipbtn = _btn(PIP_D);
     const _fsbtn = _btn(FS_D);
 
     _row.appendChild(_prevbtn.el);
@@ -610,7 +641,8 @@
     _row.appendChild(_vbtn.el); 
     _row.appendChild(_vt);
     _row.appendChild(_tm); 
-    _row.appendChild(_sp); 
+    _row.appendChild(_sp);
+    _row.appendChild(_pipbtn.el);
     _row.appendChild(_fsbtn.el);
     
     _bar.appendChild(_row);
@@ -710,6 +742,19 @@
         e.stopPropagation();if(!activeVideo||!activeVideo.duration)return;
         const r=_pt.getBoundingClientRect();
         activeVideo.currentTime=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*activeVideo.duration;
+    });
+    _pipbtn.el.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!activeVideo) return;
+        try {
+            if (document.pictureInPictureElement) {
+                await document.exitPictureInPicture();
+            } else {
+                await activeVideo.requestPictureInPicture();
+            }
+        } catch (err) {
+            console.error("Ошибка Picture-in-Picture:", err);
+        }
     });
     _fsbtn.el.addEventListener('click',(e)=>{
         e.stopPropagation();if(!activeVideo)return;
